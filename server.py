@@ -507,8 +507,34 @@ def tune_windows_scheduling() -> None:
 
 
 def get_lan_ip() -> str:
-    """Find the LAN-facing IP without sending any traffic (UDP connect only
-    selects the outbound interface, no packet leaves the machine)."""
+    """Best LAN-facing IP for the phone to reach: the first address on a
+    normal home range (192.168/16, then 10/8, then 172.16/12). VPN/TUN
+    adapters come first on some machines (e.g. Clash fake-ip 198.18/15) and
+    are unreachable from the phone, so they are skipped. Falls back to the
+    outbound-interface probe — a UDP connect just selects the interface, no
+    packet ever leaves the machine."""
+    import ipaddress
+
+    benchmark = ipaddress.ip_network("198.18.0.0/15")  # Clash fake-ip / TUN
+    ranked: list[tuple[int, str]] = []
+    for ip in get_all_ipv4():
+        try:
+            addr = ipaddress.ip_address(ip)
+        except ValueError:
+            continue
+        if not (addr.is_private and not addr.is_loopback and not addr.is_link_local):
+            continue
+        if addr in benchmark:
+            continue
+        if addr in ipaddress.ip_network("192.168.0.0/16"):
+            ranked.append((0, ip))
+        elif addr in ipaddress.ip_network("10.0.0.0/8"):
+            ranked.append((1, ip))
+        elif addr in ipaddress.ip_network("172.16.0.0/12"):
+            ranked.append((2, ip))
+    if ranked:
+        return min(ranked)[1]
+
     probe = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:
         probe.connect(("8.8.8.8", 80))
@@ -612,6 +638,37 @@ async def on_shutdown(app: web.Application) -> None:
         app["mic_playback"].stop()
 
 
+def print_qr(url: str) -> None:
+    """Render `url` as a scannable QR code using half-block glyphs. Dark
+    modules are drawn as the terminal background and light modules as glyphs,
+    which yields normal (dark-on-light) polarity on the usual dark console.
+    Best effort only: skipped if the qrcode package is missing or the console
+    cannot handle the glyphs — the URL is printed right above it anyway."""
+    try:
+        import qrcode
+
+        qr = qrcode.QRCode(border=2)
+        qr.add_data(url)
+        qr.make(fit=True)
+        m = qr.get_matrix()
+        if len(m) % 2:
+            m.append([False] * len(m[0]))  # dark=False = light = quiet zone
+        pad = " " * 6
+        for y in range(0, len(m), 2):
+            row = []
+            for x in range(len(m[0])):
+                top, bottom = m[y][x], m[y + 1][x]
+                row.append(
+                    " " if top and bottom
+                    else "▄" if top
+                    else "▀" if bottom
+                    else "█"
+                )
+            print(pad + "".join(row))
+    except Exception:
+        pass  # cosmetic; never let banner decoration break the server
+
+
 def print_banner(app: web.Application, port: int, scheme: str) -> None:
     capture = app["capture"]
     playback = app.get("mic_playback")
@@ -631,6 +688,8 @@ def print_banner(app: web.Application, port: int, scheme: str) -> None:
         print("        the browser will grant microphone access for Mic mode)")
     else:
         print("      Mic mode is UNAVAILABLE without HTTPS (cert could not be made).")
+    print("  …or scan this with the iPhone camera:")
+    print_qr(f"{scheme}://{primary}:{port}")
     if others:
         print("  Other network IPs, if that doesn't load:")
         for ip in others:
