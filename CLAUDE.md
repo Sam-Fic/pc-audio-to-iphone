@@ -29,6 +29,11 @@ Mic:    Safari getUserMedia → Opus/RTP → MicPlayback (aiortc) → WASAPI out
 - `index.html` — the Safari page. Listen/Mic toggle; listen uses a recvonly
   transceiver + live jitter-buffer readout, mic uses `getUserMedia` +
   sendonly transceiver + outbound packet-rate readout, both via `getStats()`.
+  Styled with M3E (Material 3 Expressive web components).
+- `vendor/` — the UI kit, vendored on purpose: `m3e.js` (@m3e/web 2.9.2) plus
+  the Material Symbols icon font and its `@font-face` sheet. Served by the PC
+  under `/vendor/`, so the phone needs **no internet access** to load the page.
+  Upgrading means replacing those files; do not swap to a CDN.
 - `requirements.txt` — pinned; tested on Python 3.12 / Windows 10.
 
 ## Run / verify

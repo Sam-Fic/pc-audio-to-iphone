@@ -6,12 +6,16 @@ Listen (default, PC -> AirPods):
 Mic (opt-in, iPhone -> PC):
     Safari getUserMedia -> Opus/RTP -> MicPlayback (aiortc) -> WASAPI output device
 
-aiohttp serves index.html plus two signaling endpoints (POST /offer for listen,
+aiohttp serves index.html (plus the vendored M3E web-component bundle and its
+icon font under /vendor/) and two signaling endpoints (POST /offer for listen,
 POST /mic-offer for mic); aiortc owns the WebRTC sessions and (de)codes Opus.
 Both modes share ONE port. Mic mode requires a secure context (browsers only
 grant microphone access over HTTPS), so the server generates a self-signed cert
 and serves everything over HTTPS; listen mode rides the same origin. If a cert
 can't be made it falls back to plain HTTP (listen only, mic unavailable).
+
+The UI assets are vendored on purpose: the phone must be able to load the page
+with no internet access at all (the whole point of a LAN-only bridge).
 
 Usage:
     python server.py                 # capture the current default output device
@@ -720,6 +724,7 @@ def main() -> None:
     app = web.Application()
     app["pcs"] = set()
     app.router.add_get("/", index)
+    app.router.add_static("/vendor", ROOT / "vendor", show_index=False)
     app.router.add_post("/offer", offer)
     app.router.add_post("/mic-offer", mic_offer)
     app.on_startup.append(make_on_startup(args.device, args.mic_device))

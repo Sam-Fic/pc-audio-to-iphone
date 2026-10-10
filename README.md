@@ -19,7 +19,9 @@ Windows audio ──WASAPI loopback──▶ server.py (WebRTC/Opus) ──WiFi�
   can listen — Android (Chrome), iPad, another laptop — and several devices
   can listen at the same time.
 - **Nothing leaves your network**: PC → phone directly over your LAN, no
-  server in the cloud, no account.
+  server in the cloud, no account. The page's UI kit (M3E / Material 3
+  Expressive) and its icon font are bundled in `vendor/` and served by the PC
+  itself, so the phone doesn't need internet either.
 - **Low latency by design**: WebRTC + Opus, ~200 ms end-to-end with AirPods
   (most of that is the AirPods' own Bluetooth link). Fine for music, YouTube
   and films; fast competitive games will feel the delay.
@@ -52,10 +54,11 @@ The console prints one URL for both modes, e.g.:
 ```
 
 If several URLs are listed (VPN / WSL / multiple adapters), use the one on the
-same WiFi as the phone. Open it, tap **START** — done. The page has a
-**Listen / Mic** toggle (Listen = PC audio → your AirPods; Mic = your phone's
-microphone → the PC, see
-*[Use your phone as a PC microphone](#use-your-phone-as-a-pc-microphone)*).
+same WiFi as the phone. Open it, pick a direction on the **Listen / Mic**
+toggle (Listen = PC audio → your AirPods; Mic = your phone's microphone → the
+PC, see
+*[Use your phone as a PC microphone](#use-your-phone-as-a-pc-microphone)*), and
+tap **Start**. The button turns into **Stop** once you're connected.
 
 > **It's `https://` and Safari warns "not private" — that's expected.** The
 > address is HTTPS with a self-signed certificate the server makes on first run
@@ -133,8 +136,9 @@ Now your phone is that app's microphone, over WiFi.
     game loading the CPU can't jitter the audio pipeline
   - client: `playoutDelayHint` / `jitterBufferTarget` asked for the browser's
     minimum in `index.html`
-- The page shows a live `buffer N ms` readout — that's the browser's own
-  jitter buffer, the browser-side share of whatever delay you perceive.
+- The page shows live `N ms buffer` / `N pkt lost/s` chips while streaming —
+  that's the browser's own jitter buffer, the browser-side share of whatever
+  delay you perceive.
 - Keep the page **in the foreground with the screen on** — phones suspend
   browser tabs (and the audio) when locked. The page requests a screen
   wake-lock automatically where supported.
@@ -158,7 +162,8 @@ Discord/WhatsApp calls and YouTube, at music-grade settings. Not bit-exact
 lossless, but you will struggle to hear the difference over Bluetooth.
 
 **Sound stopped when the phone locked?** Expected — phones suspend background
-tabs. Unlock and tap START again; keep the screen on while listening.
+tabs. Unlock, tap **Stop** and then **Start** again; keep the screen on while
+listening.
 
 **Can I use the phone as a mic instead?** Yes — see *[Use your phone as a PC
 microphone](#use-your-phone-as-a-pc-microphone)*. Same page, same URL, just flip
