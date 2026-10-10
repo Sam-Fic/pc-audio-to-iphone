@@ -33,8 +33,7 @@
 
   /* Pre-upgrade layout for the few elements that carry the page structure. */
   m3e-card:not(:defined),
-  m3e-button-group:not(:defined),
-  m3e-linear-progress-indicator:not(:defined) { display: block; }
+  m3e-button-group:not(:defined) { display: block; }
   m3e-button:not(:defined) {
     display: inline-flex; align-items: center; gap: 8px;
     padding: 14px 28px; border: 0; border-radius: 999px;
@@ -77,7 +76,18 @@
     color: var(--md-sys-color-on-surface-variant, #a9b4b7);
     font-size: 0.95rem; line-height: 1.45;
   }
-  m3e-linear-progress-indicator { width: min(240px, 70%); }
+  /* While connecting, the icon badge is swapped for the library's contained
+     loading indicator, recolored to the app palette (mint container, dark
+     spinner) so it reads as the same circle, just busy. */
+  #hero-loader {
+    display: none;
+    --m3e-loading-indicator-container-size: 76px;
+    --m3e-loading-indicator-size: 52px;
+    --m3e-loading-indicator-contained-container-color: var(--md-sys-color-primary-container);
+    --m3e-loading-indicator-contained-active-indicator-color: var(--md-sys-color-on-primary-container);
+  }
+  .hero.busy #hero-loader { display: block; }
+  .hero.busy .hero-icon { display: none; }
   .is-hidden { display: none !important; }
 
   /* -- controls ---------------------------------------------------------- */
@@ -128,9 +138,9 @@
     <m3e-card variant="elevated" class="hero" id="hero">
       <div slot="content" class="content">
         <span class="hero-icon"><m3e-icon id="hero-icon" name="headphones"></m3e-icon></span>
+        <m3e-loading-indicator id="hero-loader" variant="contained"></m3e-loading-indicator>
         <m3e-heading variant="headline" size="small" id="hero-title">Ready</m3e-heading>
         <p class="hero-text" id="hero-text">Play this PC's audio through your AirPods.</p>
-        <m3e-linear-progress-indicator id="busy" indeterminate class="is-hidden"></m3e-linear-progress-indicator>
       </div>
     </m3e-card>
 
@@ -172,7 +182,6 @@ const hero = document.getElementById("hero");
 const heroIcon = document.getElementById("hero-icon");
 const heroTitle = document.getElementById("hero-title");
 const heroText = document.getElementById("hero-text");
-const busy = document.getElementById("busy");
 const modeGroup = document.getElementById("mode");
 const actionBtn = document.getElementById("action");
 const actionIcon = document.getElementById("action-icon");
@@ -212,16 +221,16 @@ function applyMode(next) {
 
 // state: "idle" | "busy" | "live" | "error"
 function render(state, title, text) {
-  hero.classList.remove("live", "error");
+  hero.classList.remove("live", "error", "busy");
   if (state === "live") hero.classList.add("live");
   if (state === "error") hero.classList.add("error");
+  if (state === "busy") hero.classList.add("busy");
 
   heroIcon.name = state === "error" ? "error"
     : mode === "mic" ? "mic"
     : "headphones";
   heroTitle.textContent = title;
   heroText.textContent = text;
-  busy.classList.toggle("is-hidden", state !== "busy");
 
   const live = state === "live";
   actionIcon.name = live ? "stop" : "play_arrow";
